@@ -1,0 +1,130 @@
+\section{Algorithmen zum kollaborativen Filtern}\label{s.Algorithmen}\raggedbottom
+Beim kollaborativen Filtern ist die grundsätzliche Frage: Wie ähnlich sind sich zwei Objekte?
+Mathematisch ausgedrückt fragt man nach der Distanz zweier Objekte. Ein Ansatz ist nach der Distanz zweier User zu fragen, der andere die Ähnlichkeit zweier Items zu untersuchen. Um diese Distanz zu berechnen gibt es verschiedene Ansätze.\\
+Betrachtet man die Bewertungen als Matrix R mit den User als Zeilen und den Items als Spalten, so wird die Ähnlichkeit zweier User $u$ und $v$ durch die Distanz ihrer Zeilenvektoren bewertet. Die Distanz zweier Items $i$ und $j$ ist der Abstand der Spaltenvektoren. $r_{u,i}$ sei die Bewertung des User $u$ zum Film i. $\hat{r}_{u,i}$ ist die in den Bereich $[-1,1]\subset \mathbb{R}$ normierte Bewertung .  $R^{user}_{u}$ bezeichne die Menge der Filme, die von $u$ bewertet wurden, $R^{item}_{i}$ die Menge der User die Film $i$ bewertet haben.$\bar{r}^{user}_{u}$ ist seine durchschnittliche Bewertung.
+\begin{equation}
+\begin{aligned}	
+R^{user}_{u}&:=\{i | r_{u,i}>0\} \qquad 
+R^{item}_{i}:=\{u | r_{u,i}>0\}\\\\
+\bar{r}^{user}_{u}&:= \dfrac{\sum\limits_{i \in R^{user}_{u}}r_{u,i}}{|R^{user}_{u}|} \qquad
+\bar{r}^{item}_{i}:= \dfrac{\sum\limits_{u \in R^{item}_{i}}r_{u,i}}{|R^{item}_{i}|}\\\\
+\mathrm{min}_{R} &= \min\limits_{(u,i)\in R} r_{u,i} \qquad
+\mathrm{max}_{R} = \max\limits_{(u,i)\in R} r_{u,i} \\\\
+\hat{r}_{u,i}&:= \dfrac{2(r_{u,i}-\mathrm{min}_{R})-(\mathrm{max}_{R}-\mathrm{min}_{R})}{(\mathrm{max}_{R}-\mathrm{min}_{R})}\\
+\label{definition}
+\end{aligned}
+\end{equation}
+Im speziellen Fall der MovieLens-Daten ist $\mathrm{min}_{R} = 1$ und $\mathrm{max}_{R} = 5$, die minimale bzw. maximale Bewertung eines Filmes. \\
+Ein einfacher Weg einen neuen Vorschlag zu erzeugen ist den ähnlichsten Nutzer zu User $u$ zu finden und ein Item vorzuschlagen, dass $u$ noch nicht bewertet hat. Um ein wenig mehr Informationen zu nutzen und unabhängiger von persönlichen Vorlieben zu werden, benutzt man nicht nur einen, sondern $k$ ähnliche User. Die Menge der $k$ nächsten Nachbarn, nach dem Abstand sortiert, wird beschrieben durch die folgende Formel.
+\begin{equation}
+\mathrm{kNN}_{d}(u):=\{v_{n} | n\in \mathbb{N} \land 1\leq n\leq k \land v_{n}\in R \land d(u,v_{1})\leq d(u,v_{2})\leq ... \leq d(u,v_{k})\}
+\label{knn}
+\end{equation}
+Um ein Rating für einen Film zu erzeugen kann man nun den Mittelwert der Bewertungen der $k$ nächsten Nachbarn bilden für diesen Film. 
+\begin{equation}
+r_{d}(u,i) := \dfrac{\sum\limits_{v \in \mathrm{kNN}_{d}(u)} r_{v,i}}{|\mathrm{kNN}_{d}(u)|}  
+\label{rating}
+\end{equation}
+Diese Formel kann man als Grundformel für User-basierte Verfahren ansehen.\\\\
+In den nächsten Abschnitten werden die verschiedenen Algorithmen beschrieben. Die euklidische Distanz dient als Einstieg in die Abstandsberechnung. Die Verfahren Pearson Correlation Coefficient \cite[Kap. 2, S.~23]{G2DM}, Adjusted Cosine Similarity \cite[Kap. 3, S.~16]{G2DM} und Slope One \cite[Kap. 3, S.~28]{G2DM} sind beschrieben in dem Buch "`A Programmer's Guide to Data Mining: The Ancient Art of the Numerati"' \cite{G2DM} von Ron Zacharski, Die Algorithmen Floyd-Warshall und Local-User-Similarity-Global-User-Similarity kommen aus dem Paper "`A collaborative filtering framework based on both local user similarity and global user similarity"' \cite{cf} von Luo, Niu, Shen und Ullrich.\\
+Für alle Formeln und Algorithmen gilt die Einschränkung für $R^{user}_{u}\cap R^{user}_{v} \neq \emptyset$ bzw. $R^{item}_{i}\cap R^{item}_{j} \neq \emptyset$. Ist die Schnittmenge zwischen zwei User oder Items leer, wird keine Distanz zwischen diesem Paar definiert.
+
+\subsection{User-basierte Algorithmen}
+\subsubsection{Euklidische Distanz}\label{s.euclid}
+Eine simple Metrik ist die euklidische Distanz:
+	\begin{equation}
+	\begin{aligned}
+	d_{\mathrm{euclid}}(u,v) := \sqrt{\sum\limits_{i \in R^{user}_{u}\cap R^{user}_{v}} (r_{u,i}-r_{v,i})^2  }
+	\qquad \mathrm{, f\ddot{u}r }\quad R^{user}_{u}\cap R^{user}_{v} \neq \emptyset
+	\label{euclid}
+	\end{aligned}
+	\end{equation}
+
+Ist die Schnittmenge zwischen User $u$ und User $v$ leer, so wird keine Distanz zwischen ihnen definiert.
+Die euklidische Distanz zwischen zwei Benutzern $u$ und $v$ wird berechnet durch alle Items, die sowohl von User $u$ als auch von User $v$ bewertet wurden. Eine geringe Distanz suggeriert eine hohe Ähnlichkeit. Dies führt jedoch zu dem Problem, dass zwei Personen über die sehr wenig gemeinsame Informationen verfügen, ähnlicher bewertet werden können, als zwei Personen über die man sehr viele gemeinsame Informationen hat. Jede Information die man nutzt, vergrößert im Allgemeinen den Abstand zwischen zwei Objekten.\\
+Eine Idee wäre eine Strafe einzubauen für Informationen, die man über den User $u$ kennt, aber über User $v$ nicht.
+Ich habe mich dazu entschieden die Distanz zur mittleren Bewertung $\dfrac{1}{2}(\mathrm{max}_{R}-\mathrm{min}_{R})+\mathrm{min}_{R})^2$ als Strafe einzubauen. Als Beispiel: User $u$ hat Film $i$ mit 5 bewertet, User $v$ hat keine Bewertung zu diesem Film abgegeben, so wird der Wert 2 als Fehler addiert.
+\begin{equation}
+\begin{aligned}
+\qquad	d&_{\mathrm{euclidpenalized}}(u,v) := \\ &\sqrt{\sum\limits_{i \in R^{user}_{u}\cap R^{user}_{v}} (r_{u,i}-r_{v,i})^2  + \sum\limits_{i \in R^{user}_{u}\backslash R^{user}_{v}} (r_{u,i}-(\dfrac{1}{2}(\mathrm{max}_{R}-\mathrm{min}_{R})+\mathrm{min}_{R})^2) }
+	\label{euclidpenalty}
+\end{aligned}
+\end{equation}
+
+Eine weitere Möglichkeit Nachbarn zu suchen, die viele Informationen teilen, ist durch die Anzahl der Überschneidungen zu dividieren um eine mittlere Distanz zwischen zwei Items zu ermitteln. Damit wird die euklidische Distanz zum mittleren, quadratischen Fehler.
+\begin{equation}
+d_{\mathrm{euclidnormalized}}(u,v) := \dfrac{\sqrt{\sum\limits_{i \in R^{user}_{u}\cap R^{user}_{v}} (r_{u,i}-r_{v,i})^2  }}{|R^{user}_{u}\cap R^{user}_{v}|}
+\label{euclidmean}
+\end{equation}
+
+\subsubsection{Pearson Correlation Coefficient}\label{s.pearson}
+Der Pearson Algorithmus errechnet eine Ähnlichkeit zwischen allen User mit Hilfe des Pearson Korrelations Koeffizienten. Der Wert zwischen $[-1,1]\subset \mathbb{R}$ wird auch als Pearson Score bezeichnet. Wenn sich zwei User in ihren Bewertungen ähneln, haben sie eine Pearson Score von +1. Sind beide User komplett verschieden, bekommen sie eine Score von -1. 
+\begin{equation}
+	d_{\mathrm{pearson}}(u,v) := \dfrac{\sum\limits_{i \in R^{user}_{u}\cap R^{user}_{v}} (r_{u,i}-\bar{r}^{user}_{u})(r_{v,i}-\bar{r}^{user}_{v})}  {\sqrt{\sum\limits_{i \in R^{user}_{u}\cap R^{user}_{v}}(r_{u,i}-\bar{r}^{user}_{u})^2}\sqrt{\sum\limits_{i \in R^{user}_{u}\cap R^{user}_{v}}(r_{v,i}-\bar{r}^{user}_{v})^2}}
+	 	\label{pccformula}
+\end{equation}
+Von jeder Bewertung $r_{u,i}$ des Users $u$ für Item i, wird der Durchschnitt aller Bewertungen des Users $\bar{r}^{user}_{u}$ abgezogen. Dadurch können sich zwei User ähnlich sein, unabhängig davon ob der eine am oberen Ende der Skala und der andere am unteren Ende der Skala bewertet.
+Diese zwei User würden einen großen euklidischen Abstand haben und damit als sehr verschieden gelten. Hat man die Distanzen zwischen dem User $u$ und allen anderen User errechnet, findet man den ähnlichsten User $v$ indem man nach der Pearson Score sortiert. Eine weitere Optimierung im PCC ist, dass die Bewertungen der Nachbarn mit der Pearson-Score gewichtet gemittelt werden. Dies erzeugt eine Liste an Vorschlägen mit Items die $u$ gefallen könnten. \autoref{rating} wird mit der Gewichtung angepasst:
+\begin{equation}
+r_{d_{\mathrm{pearson}}}(u,i) := \dfrac{\sum\limits_{v \in \mathrm{kNN}_{d}(u)} r_{v,i}\cdot d_{\mathrm{pearson}}(u,v)}{\sum\limits_{v \in \mathrm{kNN}_{d}(u)}d_{\mathrm{pearson}}(u,v)}  
+\label{pearsonrating}
+\end{equation}
+
+\subsubsection{Floyd-Warshall}\label{s.flowar}
+Betrachtet man die User-User-Matrix als Graphen kann man mit Graphen-Algorithmen Beziehungen zwischen User finden. Die Gewichte des Graphen, die Ähnlichkeit zweier Nutzer, werden per Pearson Score ermittelt, wobei nur die positiven Einträge verwendet werden. Dadurch entsteht zwischen einigen User ein gewichteter Pfad. User deren Ähnlichkeit kleiner Null ist, werden nicht direkt verbunden.
+	\begin{equation}
+	w(u,v) :=\left\{ \begin{array}{ll} d_{\mathrm{pearson}}(u,v) & \quad \mathrm{if}\textbf{ } d_{\mathrm{pearson}}(u,v)>0 \\  0 & \quad \mathrm{else}\end{array}\right.	\label{weights}
+	\end{equation}
+Der Floyd-Warshall-Algorithmus berechnet die Pfade, die die minimalen Ähnlichkeiten zwischen zwei User maximiert. Gibt es K Pfade zwischen den User $u$ und v, so werden die Pfade mit $P^{k}_{uv}, (1\leq k\leq K)$ bezeichnet \cite{cf}.
+	\begin{equation}
+	d_{\mathrm{flowar}}(u,v) := \mathrm{maximin}(u,v) = \max\limits_{k=1,...,K} (\min\limits_{u_{i},u_{j}\in P^{k}_{uv}} (w(u_{i},u_{j}))) 	\label{maximin}
+	\end{equation}
+Wie bei PCC werden die $k$ ähnlichsten User betrachtet um ein gemitteltes Rating zu erzeugen.\\
+Die Idee Graphen-Algorithmen für das kollaborative Filtern zu nutzen wird in dem Paper "`Studying Recommendation Algorithms by Graph Analysis"'\cite{graph} von Mirza, Keller und Ramakrishnan näher erläutert. Das Verfahren mit Floyd-Warshall und das Konzept zum Algorithmus Local-User-Similarity-Global-User-Similarity, der im nächsten Kapitel erläutert wird, ist in dem Paper "`A collaborative filtering framework based on both local user similarity and global user similarity"'\cite{cf} von Luo, Niu, Shen und Ullrich beschrieben.
+
+
+\subsubsection{Local-User-Similarity-Global-User-Similarity}\label{s.lusgus}
+Local-User-Similarity-Global-User-Similarity (LUSGUS) ist ein Mix aus PCC und Floyd-Warshall. PCC bestimmt die lokale Ähnlichkeit zu anderen User, während Floyd-Warshall über Pfade globale Ähnlichkeiten erkennt. Dies hilft bei dünnen Matrizen die Leerräume zu überbrücken.
+Ein Parameter $a$ entscheidet wie stark die Ratings der beiden Algorithmen ins Gewicht fallen.
+	\begin{equation}
+	r_{\mathrm{LUSGUS}}(u,i) := (1-a)r_{\mathrm{pearson}}(u,i) + a r_{\mathrm{flowar}}(u,i)  	\label{LUSGUS}
+	\end{equation}
+
+
+\subsection{Item-basierte Algorithmen}
+\subsubsection{Adjusted Cosine Similarity}\label{s.adjcos}
+Adjusted Cosine Similarity (ACS) ist ein Item-Based-Algorithmus. Statt die Ähnlichkeit zweier User zu berechnen, sucht ACS nach der Ähnlichkeit zweier Items.
+\begin{equation}
+ d_{\mathrm{acs}}(i,j) := \dfrac{\sum\limits_{u\in R^{item}_{i} \cap R^{item}_{j}} (r_{u,i}-\bar{r}^{user}_{u})(r_{u,j}-\bar{r}^{user}_{u})}  {\sqrt{\sum\limits_{u\in R^{item}_{i} \cap R^{item}_{j}}(r_{u,i}-\bar{r}^{user}_{u})^2}\sqrt{\sum\limits_{u\in R^{item}_{i} \cap R^{item}_{j}}(r_{u,j}-\bar{r}^{user}_{u})^2}} 	\label{adjcosformula1}
+\end{equation}
+Die Formel berechnet die Ähnlichkeit zwischen Item $i$ und j. Im Gegensatz zu PCC summiert ACS nicht über alle Items, die zwei User verbinden, sondern über alle User, die zwei Items verbinden.\\
+Um mit diesen Ähnlichkeiten jetzt ein Rating zu erzeugen wird die folgende Funktion benötigt.
+\begin{equation}
+ \hat{r}(u,i) := \dfrac{\sum\limits_{j\in R^{user}_{u}} (d_{i,j} \hat{r}_{u,j})}  {\sum\limits_{j\in R^{user}_{u}} (|d_{i,j}|)} 	\label{adjcosformula2}
+\end{equation}	
+$j$ sind alle Items die bisher von $u$ bewertet wurden. $\hat{r}_{u,j}$ ist das normalisierte Rating im Wertebereich Float $[-1,1]\subset \mathbb{R}$. Das heißt, man betrachtet alle Items die bisher vom User $u$ bewertet wurden und multipliziert die Ähnlichkeit zu Item $i$. Dividiert durch die Summe aller Ähnlichkeiten.\\
+Danach wird das normalisierte Rating wieder in den ursprünglichen, nichtnormalisierten Ratingbereich transformiert.
+\begin{equation}
+{r}(u,i) := \dfrac{1}{2}(\hat{r}_{u,i}+1)(\mathrm{max}_{R}-\mathrm{min}_{R})+\mathrm{min}_{R} 	\label{adjcosformula3}
+\end{equation}	
+
+\subsubsection{Slope One}\label{s.slopeone}
+Slope One ist ebenfalls ein Item-basierter Algorithmus. Hier wird die Distanz zwischen zwei Items als durchschnittliche Abweichung aller Bewertungen definiert. Aus diesen erzeugt man dann ein Rating für das neue Item.
+ 
+\begin{equation}
+\mathrm{freq}(i,j) := \mathrm{card}(R^{item}_{i} \cap R^{item}_{j})=|R^{item}_{i} \cap R^{item}_{j}|\\
+\end{equation}
+\begin{equation}
+ d_{\mathrm{slope1}}(i,j) := \sum\limits_{u\in R^{item}_{i} \cap R^{item}_{j}}\dfrac{r_{u,i}-r_{u,j}}  {\mathrm{freq}(i,j)} 	\label{deviation}
+\end{equation}	
+$\mathrm{freq}(i,j)$ berechnet die Anzahl der User die sowohl $i$ als auch $j$ in ihren Bewertungen haben. $d_{\mathrm{slope1}}$ berechnet die Item-Item Matrix mit den Abweichungen zwischen allen Items. 
+Um jetzt eine Vorhersage für den User $u$ für das bisher nicht von ihm bewertete Item $i$ machen zu können, müssen wir die vorher berechneten Abweichungen nutzen.
+\begin{equation}
+ r(u,i) := \dfrac{\sum\limits_{j\in R^{user}_{u}}( d_{\mathrm{slope1}}(i,j)+r_{u,j})\mathrm{freq}(i,j)}  {\sum\limits_{j\in R^{user}_{u}}\mathrm{freq}(i,j)} 	\label{slopeone}
+\end{equation}
+Der Zähler bedeutet: Für jedes von User $u$ bewertete Item $j$ addieren wir zu $r_{u,j}$ die Abweichung $d_{\mathrm{slope1}}(i,j)$. Dies wird mit der Anzahl der User multipliziert, die beide Items $i$ und $j$ bewertet haben. Danach wird durch die Anzahl aller User geteilt die sowohl Item $i$ als auch Items des Users $u$ mit einer Bewertung versehen haben. Speichert man sowohl die Abweichungen als auch die Anzahl der Bewertungen, die in die mittlere Abweichung einbezogen wurden, gewinnt man einen weiteren großen Vorteil. Eine neue Bewertung $r_{u,i}$ kann sehr schnell in die Abweichungen hinzu gerechnet werden, ohne dass die komplette Matrix neu berechnet werden muss.
+	\begin{equation}
+\forall j\in R^{user}_{u}:\quad d_{\mathrm{slope1}}(i,j) := \dfrac{(d_{\mathrm{slope1}}(i,j)\mathrm{freq}(i,j)+(r_{u,i}-r_{u,j}))}  {\mathrm{freq}(i,j)+1} 	\label{slopeoneadd}
+	\end{equation}
+
+\clearpage

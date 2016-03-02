@@ -1,0 +1,9 @@
+\select@language {ngerman}
+\contentsline {figure}{\numberline {1}{\ignorespaces MAE im Euklid Algorithmus in Abh\IeC {\"a}ngigkeit der Parameter\relax }}{11}{figure.caption.4}
+\contentsline {figure}{\numberline {2}{\ignorespaces MAE im Pearson Algorithmus in Abh\IeC {\"a}ngigkeit der Parameter \relax }}{12}{figure.caption.5}
+\contentsline {figure}{\numberline {3}{\ignorespaces MAE im Floyd Warshall Algorithmus in Abh\IeC {\"a}ngigkeit der Parameter\relax }}{13}{figure.caption.6}
+\contentsline {figure}{\numberline {4}{\ignorespaces MAE im LUS-GUS Algorithmus in Abh\IeC {\"a}ngigkeit der Parameter\relax }}{14}{figure.caption.7}
+\contentsline {figure}{\numberline {5}{\ignorespaces MAE Vergleich aller Algorithmen\relax }}{15}{figure.caption.8}
+\contentsline {figure}{\numberline {6}{\ignorespaces MAE Vergleich mit einer Matrix mit niedrigem Rang\relax }}{17}{figure.caption.9}
+\contentsline {figure}{\numberline {7}{\ignorespaces Histogramm Vergleich\relax }}{18}{figure.caption.10}
+\contentsline {figure}{\numberline {8}{\ignorespaces MAE Vergleich ohne Normalisierung\relax }}{19}{figure.caption.11}

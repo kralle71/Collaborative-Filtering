@@ -1,0 +1,33 @@
+\section{Vorhersage zu der Filmdatenbank MovieLens}\label{s.Test} \raggedbottom
+Um die 5 Algorithmen miteinander vergleichen zu können, treten sie in verschiedenen Szenarien (s.  \autoref{s.split}) gegeneinander an. Als Datenbank dient das MovieLens Dataset 100k. Als zweiten Test habe ich eine niedrig dimensionierte, randomisierte Matrix erstellt. Die Erwartung ist, wenn sich die User sehr stark ähneln, dass die Algorithmen sehr gute Vorhersagen treffen können.
+
+\subsection{Filmdatenbank Movielens}\label{s.Datenmenge}
+Der verwendete Datensatz auf dem die Algorithmen laufen ist der MovieLens Datensatz 100k\footnote{\url{http://grouplens.org/datasets/movielens/}}. Dieser ist frei verfügbar und ist seit 1998 unverändert online, um erzielte Ergebnisse miteinander vergleichen zu können. Die Datensätze sind durch Userbewertungen, die auf Movielens\footnote{\url{https://movielens.org/}} abgegeben wurden, entstanden.
+Im 100k Datensatz sind folgende Daten enthalten:
+\begin{itemize}
+	\item 943 User
+	\item 1682 Filme
+	\item 100.000 Ratings
+	\item Ratings von 1-5
+	\item Jeder User hat mindestens 20 Filme bewertet
+	\item Demographische Informationen wie Geschlecht, Alter, Wohnort
+\end{itemize}
+Im Laufe der Jahre sind weitere, größere Datensätze entstanden. 
+Ebenfalls verfügbar sind die Datensätze 1M mit einer Million Bewertungen von 6000 User zu 4000 Filmen. Im Jahr 2009 ist der 10M Datensatz zur Verfügung gestellt worden. Zusätzlich zu den 72.000 User und 10.000 Filmen wurden noch 100.000 Tags der Datenbank hinzugefügt. Diese Informationen helfen die Vorschläge stetig zu verbessern und zu optimieren. Im Jahr 2015 hat sich die Datenbank noch einmal verdoppelt auf 20M (27k Filme / 138k User / 100k Tags). Weiterhin gibt es zwei Datensätze die sich regelmäßig verändern und somit ständig neue Voraussetzungen bieten.
+
+
+\subsection{Aufteilung der Datenmenge in Test- und Trainingsdaten}\label{s.split}
+Die Datenmenge wurde aufgeteilt in Test- und Trainingsdaten. In den Trainingsdaten sind die Informationen enthalten, die der Algorithmus nutzen kann um Vorhersagen zu generieren. Die Testdaten werden genutzt um die Vorhersagen zu überprüfen mittels der echten Bewertungen der User. Jeder User hat mindestens 20 Filme bewertet. Um verschiedene Szenarien testen zu können werden $l$ Bewertungen pro User aus der Trainingsmenge in die Testmenge überspielt, mit $l \in \{1,5,10,19\}$.\\
+Für das Test-Szenario $l = 1$ haben alle User noch mindestens 19 Bewertungen in der Datenbank. Das heißt, dass sehr viele Informationen zur Verfügung stehen. Dies beeinflusst die Wahl ähnlicher User und natürlich das Wissen über einen bestimmten User. Wie wertet er im Mittel? Welche Genres findet er gut oder schlecht? Im Fall $l = 19$ haben einige Nutzer nur noch einen Film in der Trainingsmenge. In diesem Szenario wird es sehr viel schwieriger eine passende Vorhersage zu ermitteln.
+	
+\subsection{Matrix mit niedrigem Rang}
+Als zweiter Testdatensatz dient eine zufällig erstellte Matrix mit niedrigem Rang. Die Frage die sich hier stellt ist, kann man die Datenmenge auf eine Basis von typischen User reduzieren. Wenn man solche User finden kann, kann man mit weiteren Verfahren eine geeignete Linearkombination für jeden User finden um approximativ die fehlenden Einträge der Matrix zu berechnen. In dieser Arbeit teste ich die oben genannten Algorithmen an einer solchen Menge, um eventuell parallelen zwischen den beiden Datensätzen zu erkennen. Die Testmenge besteht aus 30 typischen, linear unabhängigen User die alle 1682 Filme zwischen $[1,5]\subset \mathbb{N}$ bewertet haben. Diese Matrix wird per Linearkombination der 30 Basis-User auf 943 User erweitert, mit einem Rang 30. Danach werden 90\% der Bewertungen entfernt, um eine ähnliche Dichte wie in den MovieLens-Daten (6,3\%) zu erreichen. Jetzt werden von jedem User noch eine Bewertungen in die Testdaten überspielt ( $l = 1$ ). Da der ganze Vorgang zufällig ausgewählt wird, ist in diesem Szenario nicht garantiert, dass über jeden User noch genug Informationen durch Bewertungen in der Trainingsmenge vorliegen.
+
+\subsection{Berechnung des Fehlers}\label{s.error}
+Die Güte der Algorithmen wird über den durchschnittlichen absoluten Fehler (Mean Absolute Error) ermittelt. Jede User-Item-Bewertung aus der Testmenge $R^{test}$ wird der Vorhersage des Algorithmus gegenüber gestellt. Der absolute Fehler wird aufsummiert und durch die Anzahl der Datensätze in der Testmenge dividiert.
+\begin{equation}
+		\mathrm{MAE} := \dfrac{\sum\limits_{(u,i)\in R^{test}}|r(u,i)-r^{test}_{u,i}|}{\mathrm{card}(R^{test})}  	\label{MAE}
+\end{equation}
+Ein MAE von 1 bedeutet demnach, dass der Algorithmus mit seinem Vorschlag um durchschnittlich einen Stern daneben liegt. Bei einem MAE von 0 ist die Testmenge perfekt getroffen. Die Bewertungen in der Datenmenge liegen im Ganzzahlbereich $[1,5]\subset \mathbb{N}$. Die Algorithmen erstellen Ratings im Bereich $[1,5]\subset \mathbb{R}$. Dies führt zu einem Wertebereich des MAE von $[0,4]\subset \mathbb{R}$.
+
+\clearpage
