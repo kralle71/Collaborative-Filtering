@@ -2,25 +2,27 @@
 \appendix
 \section{Anhang: Quellcode}
 
-Da ich vor Beginn dieser Arbeit noch nicht mit Python gearbeitet habe und mit der Syntax noch nicht vertraut war, habe ich mich dazu entschlossen als Start meines Quellcodes, die Recommender Klasse von Ron Zacharski zu nutzen. In seinem Buch "`A Programmer's Guide to Data Mining: The Ancient Art of the Numerati"' \cite{G2DM} stellt er neben den Erklärungen auch Python Quellcode \footnote{\url{https://github.com/zacharski/pg2dm-python}} zur Verfügung. In Chapter 3 befindet sich die Python Datei "recommender3.py". Darin enthalten sind der Import der Movie-Lens-Daten, der Pearson und der Slope One Algorithmus. Des weiteren befindet sich die Funktion computeSimilarity(band1, band2, userRatings) in der Datei "cosineSimilarity.py". Diese Funktion war meine Ausgangslage um das Verfahren Adjusted Cosine Similarity zu implementieren.\\
-Den Code habe ich an meine Bedürfnisse angepasst, damit ich den automatisierten Test mit den Testdaten ausführen konnte. Für diese Zwecke habe ich die Testklasse erstellt. Mit der Funktion $\mathrm{testit}(\mathrm{self}, \mathrm{fct}, k=10, a=0.5)$ kann man den Testlauf für eine der Verfahren starten. Der Parameter $k$ entscheidet die Anzahl der Nachbarn, $a$ wird als Parameter für LUSGUS benötigt. 
+Da ich vor Beginn dieser Arbeit noch nicht mit Python gearbeitet habe und mit der Syntax noch nicht vertraut war, habe ich mich dazu entschlossen als Start meines Quellcodes, die Recommender Klasse von Ron Zacharski zu nutzen. In seinem Buch "`A Programmer's Guide to Data Mining: The Ancient Art of the Numerati"' \cite{G2DM} stellt er neben den Erklärungen auch Python Quellcode \footnote{\url{https://github.com/zacharski/pg2dm-python}} zur Verfügung. In Chapter 3 befindet sich die Python Datei "recommender3.py". Darin enthalten sind der Import der Movie-Lens-Daten, der Pearson und der Slope One Algorithmus. Des weiteren befindet sich die Funktion computeSimilarity(band1, band2, userRatings) in der Datei "cosineSimilarity.py". Diese Funktion war meine Ausgangslage, um das Verfahren Adjusted Cosine Similarity zu implementieren.\\
+Den Code habe ich an meine Bedürfnisse angepasst, damit ich den automatisierten Test mit den Testdaten ausführen konnte. Für diese Zwecke habe ich die Testklasse erstellt. Mit der Funktion $\mathrm{testit}(\mathrm{self}, \mathrm{fct}, k=10, a=0.5)$ kann man den Testlauf für eine der Verfahren starten. Der Parameter $k$ entscheidet die Anzahl der Nachbarn, $a$ wird als Parameter für den Hybrid Modus benötigt. 
 \begin{equation}
 \begin{aligned}
 \mathrm{fct} \in \{\mathrm{'random', 'itemmean', 'usermean', 'euclid', 'pearson',}\\ \mathrm{'slopeone', 'floydwarshall', 'lusgus', 'adjcos'}\}
 \end{aligned}
 \end{equation}
+Der Quellcode und der MovieLens-Datensatz ist online in meinem Github Repository \footnote{\url{https://github.com/kralle71/Collaborative-Filtering}} zu finden.
+
 
 \subsection{Übersicht aller Funktionen} \label{anhang:übersicht}
 \lstset{%
 	breaklines=true
 }
-\lstinputlisting[language=Python]{AllinOne-Summary.py}
+\lstinputlisting[language=Python]{CollaborativeFiltering-Summary.py}
 
 \clearpage
 
 \subsection{Quellcode} \label{anhang:quellcode}
 
-\lstinputlisting[language=Python]{AllinOne.py}
+\lstinputlisting[language=Python]{CollaborativeFiltering.py}
 
 
 \clearpage

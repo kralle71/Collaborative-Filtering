@@ -336,34 +336,48 @@ class recommender:
             distances.sort(key=lambda artistTuple: artistTuple[1])
         return distances
     
-    
-    def flwa(self):
-        """http://masc.cs.gmu.edu/wiki/FloydWarshall"""
-        # computes maximin paths
-        dist = self.adjMatrix
-        for k in dist:
-            for i in dist:
-                for j in dist:
-                    dist[i][j] = max(dist[i][j], min(dist[i][k], dist[k][j]));
-        self.floydwarDist = dist
-    
-    def computeAdjacentMatrix(self, user='0', item='0'):
+    def computeAdjacentMatrix(self):
         """Precalculations for FW"""
-        """computes the weights (pearson score) between edges of the graph"""
+        """computes the weights (euclid distance) between edges of the graph"""
         distlist = []
-        distdict = {}
-        adjMatrix = {}
-        if user == '0':
-            for (user) in self.data:
-                distlist = self.computeNearestNeighbor(user)
-                for (u,i) in distlist:
-                    if i>0: distdict[u]=i            
-                    else: distdict[u]=0
-                self.adjMatrix[user]=distdict
-                
-        else:
-            return self.computeNearestNeighbor(user,item)
-        
+        (r.penalty,r.normalized)=(True,False)
+        self.fn = self.euclDist
+        for (user) in self.data:
+            self.adjMatrix[user]={}
+            distlist = self.computeNearestNeighbor(user)
+            for (u,i) in distlist:
+                self.adjMatrix[user][u]=i
+    
+    def floydwarshall(self):
+        """https://jlmedina123.wordpress.com/2014/05/17/floyd-warshall-algorithm-in-python/""" 
+        # Initialize dist and pred:
+        # copy graph into dist, but add infinite where there is
+        # no edge, and 0 in the diagonal
+        self.computeAdjacentMatrix()
+        graph = self.adjMatrix
+        dist = {}
+        pred = {}
+        for u in graph:
+            dist[u] = {}
+            pred[u] = {}
+            for v in graph:
+                dist[u][v] = 1000
+                pred[u][v] = -1
+            dist[u][u] = 0
+            for neighbor in graph[u]:
+                dist[u][neighbor] = graph[u][neighbor]
+                pred[u][neighbor] = u
+ 
+        for t in graph:
+            # given dist u to v, check if path u - t - v is shorter
+            for u in graph:
+                for v in graph:
+                    newdist = dist[u][t] + dist[t][v]
+                    if newdist < dist[u][v]:
+                        dist[u][v] = newdist
+                        pred[u][v] = pred[t][v] # route new path through t
+ 
+        self.floydwarDist = dist
 
     def flowar(self, user, k, item):
         """FloydWarshall Recommendations"""
@@ -380,11 +394,13 @@ class recommender:
             if n == k:
                 break            
         self.k = min(len(nearest), k)
-        totalDistance = 0.0
+        if self.k ==0:
+            return self.userAvg[user]
         recommendation = 0
+        totalDistance = 0.0
         for i in range(self.k):
             if item in self.data[nearest[i][0]]:
-                totalDistance += nearest[i][1]
+                totalDistance += 1
         # now iterate through the k nearest neighbors
         # accumulating their ratings
         if totalDistance == 0:
@@ -392,7 +408,7 @@ class recommender:
         for i in range(self.k):
             if item in self.data[nearest[i][0]]:
             # compute slice of pie 
-                weight = nearest[i][1] / totalDistance
+                weight = 1 / totalDistance
             # get the name of the person
                 name = nearest[i][0]
             # get the ratings for this person
@@ -419,23 +435,23 @@ class recommender:
         """computes euclid distance between rating1 and rating2"""
         sum = 0
         freq = 0
+        nooverlap = True
         for key in rating1:
             if key in rating2:
                 sum += (rating1[key]-rating2[key])**2
                 freq +=1
+                nooverlap = False
             elif self.penalty:
                 #add penalty for items in rating1 but not in rating2
                 sum += ((rating1[key]-3))**2
                 freq +=1
-        if self.normalized and freq>0:
-            #normalize error to mean
-            result = sqrt(sum)/freq
-        else: result = sqrt(sum)
-        return result
-        
-    
-    
-        
+        if freq == 0 or nooverlap:
+            return 1000
+        else:
+            result = sqrt(sum)
+            if self.normalized:
+                result /= freq
+            return result
         
 
     def recommend(self, metric, user, k, rateItem = '0', n=30):
@@ -519,7 +535,7 @@ class recommender:
 
 class tester:
     
-    def __init__(self,data):
+    def __init__(self,r,data):
         """initialize tester"""
         
         self.username2id = {}
@@ -591,7 +607,7 @@ class tester:
     def testinput(self,fct,k,a):
         """input test for parameters given"""
         
-        fctlist = ['adjcos','lusgus','floydwarshall','pearson','slopeone','euclid','usermean','itemmean','random']
+        fctlist = ['adjcos','hybrid','floydwarshall','pearson','slopeone','euclid','usermean','itemmean','random']
         
         try: #k is integer and positiv
             k = int(k)
@@ -628,11 +644,10 @@ class tester:
         avgall = 0
         
         #precalculations
-        if fct == 'slopeone':
+        if fct == 'slopeone' or fct == 'hybrid':
             r.computeDeviations()
-        if fct == 'floydwarshall' or fct == 'lusgus':
-            r.computeAdjacentMatrix()
-            r.flwa()
+        if fct == 'floydwarshall':
+            r.floydwarshall()
         
             
         for user in self.data.keys():
@@ -643,8 +658,8 @@ class tester:
             #calculate the error between predicted rating and rating from testdata    
                 if fct == 'adjcos':
                     sum += fabs(float(self.data[user][item])-r.adjcos(user, item))
-                elif fct == 'lusgus':
-                    sum += fabs(float(self.data[user][item])-                             ((1-a)*r.recommend('pearson',user, k, item)+a*r.flowar(user,k,item)))
+                elif fct == 'hybrid':
+                    sum += fabs(float(self.data[user][item])-                             ((1-a)*r.recommend('euclid',user, k, item)+a*r.sloOne(user,item)))
                 elif fct == 'floydwarshall':
                     sum += fabs(float(self.data[user][item])-r.flowar(user,k,item))
                 elif fct == 'slopeone':
@@ -673,23 +688,18 @@ class tester:
 # In[ ]:
 
 l = 1
-path = 'J:\Ole\Uni\BA\Data'
+path = 'PathtoData\Data'
 
 r = recommender(0)
 r.loadMovieLens(path+'\ml-L='+str(l)+'/')
 r.computeUserAverages()
 
-t = tester(0)
+t = tester(r,0)
 t.loadMovieLens(path+'\ml-L='+str(l)+'/')
 
 
 # possible folders are ml-L=1  / 5, 10, 19. .
 # determines how many ratings per user will be in testdata
-
-# In[ ]:
-
-
-
 
 # # ToyData low rank matrix
 #             
@@ -704,12 +714,10 @@ m = 943
 n = 1682
 
 
-matrixdensity = 0.1
+matrixdensity = 0.063
+#matrixdensity = 0.30
 normalize=True
 
-#A = np.random.uniform(1,10,(m,n))
-#B = np.dot(A.transpose(),A)
-#B=A
 
 #create random low rank matrix with rank o
 A1 = np.random.uniform(1,5,(m,o))
@@ -763,7 +771,7 @@ for (i,j), value in np.ndenumerate(D):
         
 r = recommender(traindata)
 r.computeUserAverages()
-t = tester(testdata)
+t = tester(r,testdata)
 
 
 # ### Create histograms to compare the randomized low rank matrix to the MovieLens data
@@ -793,7 +801,7 @@ plt.show()
 
 # In[ ]:
 
-get_ipython().run_cell_magic(u'time', u'', u'r.computeAdjacentMatrix();\nr.flwa();\nam = r.adjMatrix\nfw = r.floydwarDist')
+get_ipython().run_cell_magic(u'time', u'', u'r.floydwarshall()\nam = r.adjMatrix\nfw = r.floydwarDist')
 
 
 # In[ ]:
@@ -802,16 +810,16 @@ r.adjMatrix = am
 r.floydwarDist = fw
 
 
-# # Parameter test for Pearson, FloydWarshall and LUSGUS
+# # Parameter test for Euclid, Pearson, FloydWarshall and Hybrid
 
 # In[ ]:
 
-get_ipython().run_cell_magic(u'time', u'', u'alist=[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]\nfor a in alist:\n    print ("%3.1f: %10.5f" %  (a,t.testit(\'lusgus\',k,a)))')
+get_ipython().run_cell_magic(u'time', u'', u'(r.penalty,r.normalized)=(True,False)\nk=15\nalist=[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]\nfor a in alist:\n    print ("%3.1f: %10.5f" %  (a,t.testit(\'hybrid\',k,a)))')
 
 
 # In[ ]:
 
-get_ipython().run_cell_magic(u'time', u'', u'klist = [1,25,50,100,200,500]\nfor k in klist:\n    print ("%i: %10.5f" %  (k,t.testit(\'floydwarshall\',k)))\n    ')
+get_ipython().run_cell_magic(u'time', u'', u'klist = [1,25,50,100,200,500]\nfor k in klist:\n    print ("%i: %10.5f" %  (k,t.testit(\'floydwarshall\',k)))')
 
 
 # In[ ]:
@@ -828,12 +836,12 @@ get_ipython().run_cell_magic(u'time', u'', u'klist = [1,5,10,15,20,25,50,100,200
 
 # In[ ]:
 
-get_ipython().run_cell_magic(u'time', u'', u'print "LUSGUS"\nprint "%10.5f" % t.testit(\'lusgus\',25,0.8)')
+get_ipython().run_cell_magic(u'time', u'', u'print "Hybrid"\nprint "%10.5f" % t.testit(\'hybrid\',15,0.3)')
 
 
 # In[ ]:
 
-get_ipython().run_cell_magic(u'time', u'', u'print "FloydWarshall"\nprint "%10.5f" % t.testit(\'floydwarshall\',100)')
+get_ipython().run_cell_magic(u'time', u'', u'print "FloydWarshall"\nprint "%10.5f" % t.testit(\'floydwarshall\',10)')
 
 
 # In[ ]:

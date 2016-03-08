@@ -1,16 +1,8 @@
-\begin{thebibliography}{LNSU08}
+\begin{thebibliography}{Zar15}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
-
-\bibitem[LNSU08]{cf}
-\textsc{Luo} ; \textsc{Niu} ; \textsc{Shen}  ; \textsc{Ullrich}:
-\newblock A collaborative filterin framework based on both loacal user
-  similarity and global user similarity.
-\newblock   (2008).
-\newblock
-  \url{http://www-ai.cs.uni-dortmund.de/LEHRE/SEMINARE/SS09/AKTARBEITENDESDM/LITERATUR/CollaborativeFiltering.pdf}
 
 \bibitem[MKR]{graph}
 \textsc{Mirza} ; \textsc{Keller}  ; \textsc{Ramakrishnan}:
